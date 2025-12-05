@@ -1,100 +1,110 @@
-DevOps One‑Click Deployment Assignment
-This project deploys a simple Python REST API on private EC2 instances behind an Application Load Balancer (ALB) and Auto Scaling Group (ASG) using Terraform. Deployment can be triggered locally with a script or via GitHub Actions.​
+# DevOps One Click Deployment
 
-Architecture
-VPC with 2 public and 2 private subnets.
+This project deploys a small Python REST API on private EC2 instances. The application runs behind an Application Load Balancer and an Auto Scaling Group. All resources are created with Terraform. Deployment can be triggered locally with helper scripts or through GitHub Actions.
 
-Internet Gateway and NAT Gateway for outbound internet from private subnets.
+## Architecture
 
-Public ALB (HTTP on port 80) routing to an ASG of EC2 instances in private subnets.
+- VPC with two public and two private subnets
+- Internet Gateway and NAT Gateway for outbound traffic from private subnets
+- Public Application Load Balancer listening on port 80
+- Auto Scaling Group of EC2 instances placed in private subnets
+- EC2 instances (Amazon Linux 2) running a Python Flask API on port 8080
+- IAM role with AWS managed SSM and CloudWatch policies
 
-EC2 instances (Amazon Linux 2) run a Python Flask API on port 8080.
+## Repository Structure
 
-IAM role with AWS‑managed CloudWatch and SSM policies (no hard‑coded secrets).​
+- `terraform/`  
+  Terraform configuration for VPC, NAT, ALB, ASG, EC2 and IAM
 
-Repo structure
-terraform/ – Terraform IaC for VPC, NAT, ALB, ASG, EC2, IAM.
+- `app/`  
+  Python Flask application
 
-app/ – Python Flask API code.
+- `scripts/`  
+  Helper scripts such as `deploy.sh`, `destroy.sh` and `test.sh`
 
-scripts/ – Helper scripts (deploy.sh, destroy.sh, test.sh).
+- `.github/workflows/`  
+  GitHub Actions workflows for deployment and teardown
 
-.github/workflows/ – GitHub Actions workflows for deploy/destroy.​
+## Prerequisites
 
-Prerequisites
-AWS account with IAM user/keys allowed to create VPC, subnets, ALB, ASG, EC2, IAM roles, etc.
+- AWS account with permissions to create VPC, ALB, ASG, EC2 and IAM resources  
+- Terraform version 1.0 or newer  
+- Git installed  
+- For GitHub Actions, repository secrets set for  
+  - `AWS_ACCESS_KEY_ID`  
+  - `AWS_SECRET_ACCESS_KEY`
 
-Terraform 1.0+ installed locally.
+## Application Details
 
-Git installed.
+The Python Flask application listens on port 8080 and exposes two routes.
 
-For GitHub Actions: repository secrets set:
+- `GET /` returns a short text message  
+- `GET /health` returns `ok`  
 
-AWS_ACCESS_KEY_ID
+All logs are written to standard output.
 
-AWS_SECRET_ACCESS_KEY​
+## Terraform Configuration
 
-Application details
-The Python app (Flask) runs on port 8080 and exposes:​
+Set values in `terraform/terraform.tfvars`. Example:
 
-GET / → returns simple text (e.g., “Hello from DevOps assignment!”).
+aws_region = "ap-south-1"
+app_git_repo = "https://github.com/
+<username>/<repo>.git"
 
-GET /health → returns ok.
 
-Logs are printed to stdout.​
+Other defaults such as VPC CIDR blocks, subnet ranges and Auto Scaling settings are defined in `variables.tf`. These can be overridden in the same `terraform.tfvars` file if required.
 
-Terraform configuration
-In terraform/terraform.tfvars, set:​
+## One Click Local Deployment
 
-text
-aws_region   = "ap-south-1"        # or your preferred region
-app_git_repo = "https://github.com/<your-user>/<this-repo>.git"
-Other defaults (VPC CIDR, subnets, ASG sizes) are set in variables.tf and can be overridden in terraform.tfvars if needed.​
+From the root of the repository:
 
-One‑click local deploy
-From repo root:
+Make the scripts executable.
 
-Make scripts executable (once):
 
-bash
+
 chmod +x scripts/deploy.sh scripts/destroy.sh scripts/test.sh
-Deploy the stack:
 
-bash
+
+Deploy the full stack.
+
+
+
 ./scripts/deploy.sh
-After apply finishes, test the API:
 
-bash
+
+After the apply step finishes, test the application.
+
+
+
 ./scripts/test.sh
-This script reads the ALB DNS from terraform output alb_dns_name and calls:​
+
+
+The test script reads the Application Load Balancer DNS name from the Terraform output `alb_dns_name` and calls the endpoints at
+
+
 
 http://<alb_dns>/
-
 http://<alb_dns>/health
 
-Destroy the stack when done:
 
-bash
+To remove the stack:
+
+
+
 ./scripts/destroy.sh
-This satisfies the one‑click deploy and teardown requirements.​
 
-GitHub Actions deployment
-GitHub Actions workflows are under .github/workflows/.​
 
-deploy.yml:
+## GitHub Actions Deployment
 
-Triggered on push to main and manually via “Run workflow”.
+Workflows are stored under `.github/workflows/`.
 
-Steps: checkout, configure AWS credentials from secrets, terraform init, terraform apply -auto-approve in terraform/.
+### deploy.yml
 
-destroy.yml (optional):
+Runs on pushes to the `main` branch or when started manually.  
+Steps include checkout, AWS credentials setup, `terraform init` and `terraform apply` inside the `terraform/` directory.
 
-Triggered manually via “Run workflow”.
+### destroy.yml
 
-Runs terraform destroy -auto-approve in terraform/.
+Optional manual workflow that runs `terraform destroy` in the same directory.
 
-Before using these, ensure:​
-
-AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set as repo secrets.
-
-Terraform state backend (default local) is acceptable for your use case.
+Before running these workflows, confirm that the AWS credentials are stored as repository secrets 
