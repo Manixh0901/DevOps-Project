@@ -30,7 +30,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ap-south-1
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ se0c.rets.AWS_ROLE_TO_ASSUME }}
           role-session-name: github-actions-terraform
 
       - name: Terraform Init
